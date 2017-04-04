@@ -1,0 +1,10 @@
+server
+client
+.vscode/
+.vagrant/
+*.sw?
+*.o
+*.out
+*.dSYM
+*.plist
+
