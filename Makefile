@@ -17,11 +17,8 @@ client: $(CLASSES)
 clean:
 	rm -rf *.o *~ *.gch *.swp *.dSYM server client *.tar.gz *.plist
 
-tidy-server:
-	clang-tidy server.cpp -checks=$(CHECKS) -- -std=c++11
-
-tidy-client:
-	clang-tidy client.cpp -checks=$(CHECKS) -- -std=c++11
+tidy-%: %.cpp
+	clang-tidy $< -checks=$(CHECKS) -- -std=c++11
 
 dist: tarball
 tarball: clean
