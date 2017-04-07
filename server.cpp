@@ -144,9 +144,14 @@ void Server::recv_file(int client_fd, int client_id)
   close(client_fd);
 }
 
-int main() {
+int main(int argc, char *argv[]) {
+  if (argc != 3) {
+    std::cerr << "Usage: server <PORT> <FILE-DIR>" << std::endl;
+    return EXIT_FAILURE;
+  }
+
   try {
-    Server s = Server("4000", "filedir");
+    Server s = Server(argv[1], argv[2]);
     s.start_server();
   } catch (std::runtime_error& e) {
     std::cerr << "ERROR: " << e.what() << std::endl;
