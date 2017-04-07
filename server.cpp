@@ -33,25 +33,25 @@
  *   - The server should be able to accept and save files up to 100 MiB
  */
 #include "server.h"
+
+#include <thread>
+#include <string>
+#include <vector>
+#include <iostream>
+
+#include <unistd.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <fcntl.h>
 #include <netdb.h>
 
-#include <unistd.h>
-#include <fcntl.h>
-
-#include <cstdlib>
-#include <iostream>
-#include <thread>
-#include <string>
-
-#define BACKLOG 10
-
 Server::Server(const std::string& port, const std::string& file_directory)
+  : dir_fd(-1), sock_fd(-1), client_count(0)
 {
   int r;
-  struct addrinfo hints, *res;
+  struct addrinfo hints{0};
+  struct addrinfo *res;
 
   /* check your privilege
    * NOTE: man pages warn that access() has a race condition, but we're not
@@ -71,7 +71,7 @@ Server::Server(const std::string& port, const std::string& file_directory)
   hints.ai_protocol = 0;           // let getaddrinfo() pick the protocol
   hints.ai_flags = AI_PASSIVE;     // fill in my IP (be interface independent)
 
-  r = getaddrinfo(NULL, port.c_str(), &hints, &res);
+  r = getaddrinfo(nullptr, port.c_str(), &hints, &res);
   if (r < 0) {
     throw std::runtime_error("getaddrinfo() failed");
   }
@@ -96,7 +96,10 @@ Server::Server(const std::string& port, const std::string& file_directory)
 
 Server::~Server()
 {
-  /* TODO: error checking on close()... who cares? */
+  /* TODO:
+   *  - error checking on close()
+   *  - exit all running threads
+   *  - close all open files      */
   close(dir_fd);
   close(sock_fd);
 }
@@ -104,14 +107,41 @@ Server::~Server()
 void Server::start_server()
 {
   while (true) {
-    int client_fd = accept(sock_fd, NULL, NULL);
+    int client_fd = accept(sock_fd, nullptr, nullptr);
     if (client_fd < 0) {
       /* TODO: this error probably shouldn't bring down our whole server */
       throw std::runtime_error("accept() failed");
     }
-    send(client_fd, "wheeee\n", 8, 0);
-    close(client_fd);
+    std::thread t1(&Server::recv_file, this, client_fd, client_count);
+    client_count++;
+    t1.join();
   }
+}
+
+void Server::recv_file(int client_fd, int client_id)
+{
+  int file_fd, r;
+  ssize_t nbytes;
+  std::string fname = std::to_string(client_id) + ".file";
+
+  file_fd = openat(dir_fd, fname.c_str(), O_CREAT | O_WRONLY, S_IWUSR | S_IRUSR);
+  if (file_fd < 0) {
+    /* TODO: what happens if a thread throws an exception? */
+    throw std::runtime_error("could not create file " + fname);
+  }
+
+  while ((nbytes = recv(client_fd, static_cast<char*>(buf), RECV_BUF, 0)) > 0) {
+    r = write(file_fd, static_cast<char*>(buf), nbytes);
+    if (r < 0) {
+      throw std::runtime_error("write() failed");
+    }
+  }
+  /* TODO: fix this error checking for recv() and close() */
+  if (nbytes < 0) {
+    throw std::runtime_error("recv() failed");
+  }
+  close(file_fd);
+  close(client_fd);
 }
 
 int main() {
