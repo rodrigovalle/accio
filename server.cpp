@@ -49,7 +49,6 @@
 Server::Server(const std::string& port, const std::string& file_directory)
   : dir_fd(-1), sock_fd(-1), client_count(0)
 {
-  int r;
   struct addrinfo hints{0};
   struct addrinfo *res;
 
@@ -60,8 +59,7 @@ Server::Server(const std::string& port, const std::string& file_directory)
   if (dir_fd < 0) {
     throw std::runtime_error("invalid directory " + file_directory);
   }
-  r = faccessat(dir_fd, ".", W_OK, 0);
-  if (r < 0) {
+  if (faccessat(dir_fd, ".", W_OK, 0) != 0) {
     throw std::runtime_error("no write permissions in " + file_directory);
   }
 
@@ -71,8 +69,7 @@ Server::Server(const std::string& port, const std::string& file_directory)
   hints.ai_protocol = 0;           // let getaddrinfo() pick the protocol
   hints.ai_flags = AI_PASSIVE;     // fill in my IP (be interface independent)
 
-  r = getaddrinfo(nullptr, port.c_str(), &hints, &res);
-  if (r < 0) {
+  if (getaddrinfo(nullptr, port.c_str(), &hints, &res) != 0) {
     throw std::runtime_error("getaddrinfo() failed");
   }
 
@@ -82,14 +79,12 @@ Server::Server(const std::string& port, const std::string& file_directory)
   }
 
   /* bind to port (SO_REUSEADDR?) */
-  r = bind(sock_fd, res->ai_addr, res->ai_addrlen);
-  if (r < 0) {
+  if (bind(sock_fd, res->ai_addr, res->ai_addrlen) != 0) {
     throw std::runtime_error("bind() failed");
   }
 
   /* listen */
-  r = listen(sock_fd, BACKLOG);
-  if (r < 0) {
+  if (listen(sock_fd, BACKLOG) != 0) {
     throw std::runtime_error("listen() failed");
   }
 }
