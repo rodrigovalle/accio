@@ -32,7 +32,7 @@
  *     discarding any partial input
  *   - The server should be able to accept and save files up to 100 MiB
  */
-#include "server.h"
+#include "server.hpp"
 
 #include <thread>
 #include <string>
