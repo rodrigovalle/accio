@@ -1,4 +1,4 @@
-/* 
+/*
  * The server listens for TCP connections and saves all the received data
  * from the client in a file.
  *
@@ -34,23 +34,22 @@
  */
 #include "server.hpp"
 
-#include <thread>
-#include <string>
-#include <vector>
-#include <iostream>
-
-#include <unistd.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <sys/socket.h>
 #include <fcntl.h>
 #include <netdb.h>
+#include <sys/socket.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
+
+#include <iostream>
+#include <string>
+#include <thread>
+#include <vector>
 
 Server::Server(const std::string& port, const std::string& file_directory)
-  : dir_fd(-1), sock_fd(-1), client_count(0), threads(THREADS)
-{
-  struct addrinfo hints{0};
-  struct addrinfo *res;
+    : dir_fd(-1), sock_fd(-1), client_count(0), threads(THREADS) {
+  struct addrinfo hints = {0};
+  struct addrinfo* res;
 
   /* check your privilege
    * NOTE: man pages warn that access() has a race condition, but we're not
@@ -64,10 +63,10 @@ Server::Server(const std::string& port, const std::string& file_directory)
   }
 
   /* create a new socket */
-  hints.ai_family = AF_UNSPEC;     // Use IPV4 or IPV6
-  hints.ai_socktype = SOCK_STREAM; // Use TCP stream sockets
-  hints.ai_protocol = 0;           // let getaddrinfo() pick the protocol
-  hints.ai_flags = AI_PASSIVE;     // fill in my IP (be interface independent)
+  hints.ai_family = AF_UNSPEC;      // Use IPV4 or IPV6
+  hints.ai_socktype = SOCK_STREAM;  // Use TCP stream sockets
+  hints.ai_protocol = 0;            // let getaddrinfo() pick the protocol
+  hints.ai_flags = AI_PASSIVE;      // fill in my IP (be interface independent)
 
   if (getaddrinfo(nullptr, port.c_str(), &hints, &res) != 0) {
     throw std::runtime_error("getaddrinfo() failed");
@@ -89,8 +88,7 @@ Server::Server(const std::string& port, const std::string& file_directory)
   }
 }
 
-Server::~Server()
-{
+Server::~Server() {
   /* TODO:
    *  - error checking on close()
    *  - exit all running threads
@@ -108,8 +106,7 @@ Server::~Server()
   close(dir_fd);
 }
 
-void Server::start_server()
-{
+void Server::start_server() {
   while (true) {
     int client_fd = accept(sock_fd, nullptr, nullptr);
     if (client_fd < 0) {
@@ -124,13 +121,13 @@ void Server::start_server()
   }
 }
 
-void Server::recv_file(int client_fd, int client_id)
-{
+void Server::recv_file(int client_fd, int client_id) {
   int file_fd, r;
   ssize_t nbytes;
   std::string fname = std::to_string(client_id) + ".file";
 
-  file_fd = openat(dir_fd, fname.c_str(), O_CREAT | O_WRONLY, S_IWUSR | S_IRUSR);
+  file_fd =
+      openat(dir_fd, fname.c_str(), O_CREAT | O_WRONLY, S_IWUSR | S_IRUSR);
   if (file_fd < 0) {
     /* TODO: what happens if a thread throws an exception? */
     throw std::runtime_error("could not create file " + fname);
@@ -150,7 +147,7 @@ void Server::recv_file(int client_fd, int client_id)
   close(client_fd);
 }
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
   if (argc != 3) {
     std::cerr << "Usage: server <PORT> <FILE-DIR>" << std::endl;
     return EXIT_FAILURE;
