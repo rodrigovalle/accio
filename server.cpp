@@ -47,7 +47,7 @@
 #include <netdb.h>
 
 Server::Server(const std::string& port, const std::string& file_directory)
-  : dir_fd(-1), sock_fd(-1), client_count(0)
+  : dir_fd(-1), sock_fd(-1), client_count(0), threads(THREADS)
 {
   struct addrinfo hints{0};
   struct addrinfo *res;
@@ -95,8 +95,17 @@ Server::~Server()
    *  - error checking on close()
    *  - exit all running threads
    *  - close all open files      */
-  close(dir_fd);
+
+  /* stop accepting connections */
   close(sock_fd);
+
+  /* wait for all threads to finish */
+  for (std::thread& t : threads) {
+    t.join();
+  }
+
+  /* close the directory */
+  close(dir_fd);
 }
 
 void Server::start_server()
@@ -107,9 +116,11 @@ void Server::start_server()
       /* TODO: this error probably shouldn't bring down our whole server */
       throw std::runtime_error("accept() failed");
     }
-    std::thread t1(&Server::recv_file, this, client_fd, client_count);
+
+    /* create a new thread to handle the connection and continue waiting for
+     * new connections */
+    threads.emplace_back(&Server::recv_file, this, client_fd, client_count);
     client_count++;
-    t1.join();
   }
 }
 
@@ -146,7 +157,7 @@ int main(int argc, char *argv[]) {
   }
 
   try {
-    Server s = Server(argv[1], argv[2]);
+    Server s{argv[1], argv[2]};
     s.start_server();
   } catch (std::runtime_error& e) {
     std::cerr << "ERROR: " << e.what() << std::endl;
