@@ -1,7 +1,7 @@
 /*
  * The client connects to the server and as soon as the connection is
  * established, sends the content of a file to the server.
- * 
+ *
  *
  * USAGE
  *   ./client <HOSTNAME-OR-IP> <PORT> <FILENAME>
@@ -10,7 +10,7 @@
  * port:            port number of the server to connect
  * filename:        name of the file to transfer to the server after the
  *                  connection is established
- * 
+ *
  *
  * REQUIREMENTS
  *   - The client must be able to connect to the specified server and port,
@@ -36,11 +36,12 @@
 #include <iostream>
 #include <string>
 
-#define EXIT_FAILURE 1
-
-int main() {
+int main(int argc, char* argv[]) {
+  if (argc != 4) {
+    std::cerr << "Usage: " << argv[0] << " <HOSTNAME-OR-IP> <PORT> <FILENAME>"
+              << std::endl;
+  }
   try {
-    // TODO
   } catch (std::runtime_error& e) {
     std::cerr << "ERROR: " << e.what() << std::endl;
     return EXIT_FAILURE;
