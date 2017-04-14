@@ -50,6 +50,7 @@ Server::Server(const std::string& port, const std::string& file_directory)
     : dir_fd(-1), sock_fd(-1), client_count(0), threads(THREADS) {
   struct addrinfo hints = {0};
   struct addrinfo* res;
+  int status;
 
   /* check your privilege
    * NOTE: man pages warn that access() has a race condition, but we're not
@@ -63,14 +64,35 @@ Server::Server(const std::string& port, const std::string& file_directory)
   }
 
   /* create a new socket */
-  hints.ai_family = AF_UNSPEC;      // Use IPV4 or IPV6
+  hints.ai_family = AF_INET;        // Use IPV4
   hints.ai_socktype = SOCK_STREAM;  // Use TCP stream sockets
   hints.ai_protocol = 0;            // let getaddrinfo() pick the protocol
   hints.ai_flags = AI_PASSIVE;      // fill in my IP (be interface independent)
 
-  if (getaddrinfo(nullptr, port.c_str(), &hints, &res) != 0) {
-    throw std::runtime_error("getaddrinfo() failed");
+  if ((status = getaddrinfo(nullptr, port.c_str(), &hints, &res)) != 0) {
+    std::string error_str(gai_strerror(status));
+    throw std::runtime_error("getaddrinfo() failed: " + error_str);
   }
+
+ /* for (auto* res_i = res; res_i != NULL; res_i = res_i->ai_next) {
+  *   std::cout << "ai_addr:      " << res_i->ai_addr << std::endl;
+  *   std::cout << "ai_family:    ";
+  *   switch (res_i->ai_family) {
+  *     case AF_UNIX:
+  *       std::cout << "AF_UNIX";
+  *       break;
+  *     case AF_INET:
+  *       std::cout << "AF_INET";
+  *       break;
+  *     case AF_INET6:
+  *       std::cout << "AF_INET6";
+  *       break;
+  *   }
+  *   std::cout << std::endl;
+  *   std::cout << "ai_socktype:  " << res_i->ai_socktype << std::endl;
+  *   std::cout << "ai_protocol:  " << res_i->ai_protocol << std::endl;
+  * }
+  */
 
   sock_fd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
   if (sock_fd < 0) {
