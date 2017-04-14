@@ -149,7 +149,7 @@ void Server::recv_file(int client_fd, int client_id) {
 
 int main(int argc, char* argv[]) {
   if (argc != 3) {
-    std::cerr << "Usage: server <PORT> <FILE-DIR>" << std::endl;
+    std::cerr << "Usage: " << argv[0] << " <PORT> <FILE-DIR>" << std::endl;
     return EXIT_FAILURE;
   }
 
