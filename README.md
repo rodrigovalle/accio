@@ -19,4 +19,7 @@ themselves before program termination.
 [cplusplus.com](http://www.cplusplus.com/reference)  
 [C++ Reference](http://en.cppreference.com/w/cpp)  
 [How to end C++ code](http://stackoverflow.com/questions/30250934)  
-[Beej's Guide to Network Programming](http://beej.us/guide/bgnet)
+[Beej's Guide to Network Programming](http://beej.us/guide/bgnet)  
+[AOSA: Nginx](http://www.aosabook.org/en/nginx.html)
+
+`socat - tcp-connect:<HOST>:<PORT>`
