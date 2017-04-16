@@ -14,6 +14,10 @@ themselves before program termination.
 
 ## Additional Libraries
 
+## Notes
+### Where are all the merge commits, didn't you use feature branches?
+I avoided them through gratuitous use of fast-foward merges and rebasing.
+
 ## Acknowledgements
 
 [cplusplus.com](http://www.cplusplus.com/reference)  
