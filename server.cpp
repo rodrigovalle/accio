@@ -155,7 +155,7 @@ void Server::recv_file(int client_fd, int client_id) {
     throw std::runtime_error("could not create file " + fname);
   }
 
-  while ((nbytes = recv(client_fd, static_cast<char*>(buf), RECV_BUF, 0)) > 0) {
+  while ((nbytes = recv(client_fd, static_cast<char*>(buf), RECVSIZ, 0)) > 0) {
     r = write(file_fd, static_cast<char*>(buf), nbytes);
     if (r < 0) {
       throw std::runtime_error("write() failed");

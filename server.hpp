@@ -4,7 +4,7 @@
 
 #define BACKLOG 10
 #define THREADS 10
-#define RECV_BUF 1048576 /* 1 MiB */
+#define RECVSIZ BUFSIZ
 
 class Server {
  public:
@@ -20,7 +20,7 @@ class Server {
   int dir_fd;
   int sock_fd;
   int client_count;
-  char buf[RECV_BUF];
+  char buf[RECVSIZ];
 
   std::vector<std::thread> threads;
 };
