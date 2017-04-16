@@ -144,7 +144,7 @@ void Server::start_server() {
 }
 
 void Server::recv_file(int client_fd, int client_id) {
-  int file_fd, r;
+  int file_fd;
   ssize_t nbytes;
   std::string fname = std::to_string(client_id) + ".file";
 
@@ -155,13 +155,14 @@ void Server::recv_file(int client_fd, int client_id) {
     throw std::runtime_error("could not create file " + fname);
   }
 
-  while ((nbytes = recv(client_fd, static_cast<char*>(buf), RECVSIZ, 0)) > 0) {
-    r = write(file_fd, static_cast<char*>(buf), nbytes);
-    if (r < 0) {
+  while ((nbytes = recv(client_fd, buf, RECV_BUF, 0)) > 0) {
+    if (write(file_fd, buf, nbytes) < 0) {
       throw std::runtime_error("write() failed");
     }
   }
-  /* TODO: fix this error checking for recv() and close() */
+  /* TODO:
+   *  - fix this error checking for recv() and close()
+   *  - won't close the file descriptors properly if we error out */
   if (nbytes < 0) {
     throw std::runtime_error("recv() failed");
   }
