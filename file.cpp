@@ -15,7 +15,7 @@ File File::open(std::string& file, int flags) {
   if (fd < 0) {
     throw std::runtime_error("open(): " + std::string(strerror(errno)));
   }
-  return FileDescriptor(fd);
+  return FileDescriptor{fd};
 }
 
 File File::open_r(std::string& file) {
