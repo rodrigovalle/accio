@@ -26,6 +26,9 @@ class ConnectedSocket {
   ~ConnectedSocket();
   ConnectedSocket(const ListeningSocket& that) = delete;
   std::string recv();
+
+  /* Sends the entire string over the connection.
+   * TODO: fix the SOCK_NONBLOCK case */
   void send(std::string& msg);
 
  private:
