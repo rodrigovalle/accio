@@ -138,16 +138,22 @@ std::string ConnectedSocket::recv() {
 }
 
 void ConnectedSocket::send(std::string& msg) {
-  ssize_t nbytes;
+  ssize_t nbytes = 0;
   ssize_t total = 0;
   std::string acc;
   const char *strbuf = msg.c_str();
 
-  while (total < msg.length()) {
+  while (total < msg.length() && nbytes != -1) {
     nbytes = ::send(sockfd, strbuf + total, msg.length(), 0);
-    if (nbytes == -1) {
-      throw std::runtime_error("send(): " + std::string(strerror(errno)));
-    }
     total += nbytes;
   }
+  if (nbytes == -1) {
+    switch (errno) {
+      case ESOCKWOULDBLOCK:
+        break;
+      default:
+        throw std::runtime_error("send(): " + std::string(strerror(errno)));
+    }
+  }
+}
 }
