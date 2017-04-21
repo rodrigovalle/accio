@@ -22,14 +22,14 @@ ListeningSocket::ListeningSocket(const std::string& port) {
   }
 
   for (res_i = res; res_i != nullptr; res_i = res_i->ai_next) {
-    sockfd = ::socket(res_i->ai_family, res_i->ai_socktype, res_i->ai_protocol);
-    if (sockfd != 0) {
+    sockfd = socket(res_i->ai_family, res_i->ai_socktype, res_i->ai_protocol);
+    if (sockfd == -1) {
       cause = "socket(): " + std::string(strerror(errno));
       continue;
     }
 
-    if (connect(sockfd, res_i->ai_addr, res->ai_addrlen) != 0) {
-      cause = "connect(): " + std::string(sterror(errno));
+    if (bind(sockfd, res_i->ai_addr, res->ai_addrlen) != 0) {
+      cause = "bind(): " + std::string(sterror(errno));
       close(sockfd);
       sockfd = -1;
       continue;
@@ -51,6 +51,15 @@ ListeningSocket::ListeningSocket(const std::string& port) {
   }
 }
 
+ListeningSocket::~ListeningSocket() {
+  close(sockfd);
+}
+
 ConnectedSocket ListeningSocket::accept() {
-  ::
+  int connfd = ::accept(sockfd, nullptr, nullptr);
+  if (connfd == -1) {
+    throw std::runtime_error("accept(): " + strerror(errno));
+  }
+  return ConnectedSocket{connfd};
+}
 }
