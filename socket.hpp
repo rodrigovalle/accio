@@ -1,7 +1,9 @@
 #include <string>
 
 #define BACKLOG 10
-#define RECVBUF BUFSIZ
+#define SOCKBUF BUFSIZ
+
+class sock_closed : public std::runtime_error;
 
 class ConnectedSocket;
 class ListeningSocket {
@@ -16,14 +18,17 @@ class ListeningSocket {
 };
 
 class ConnectedSocket {
+ friend ListeningSocket;
+
  public:
-  ConnectedSocket(const std::string& hostname, const std::string& port);
+  ConnectedSocket(const std::string& host, const std::string& port);
   ~ConnectedSocket();
   ConnectedSocket(const ListeningSocket& that) = delete;
   std::string& recv();
+  void send(std::string& msg);
 
  private:
   ConnectedSocket(int fd);
   int sockfd;
-  char buf[RECVBUF];
+  char buf[SOCKBUF];
 };
