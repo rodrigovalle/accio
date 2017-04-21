@@ -5,6 +5,8 @@
 #include <netdb.h>
 #include <unistd.h>
 
+#include <cstring>
+
 // Ugly hack to be POSIX compliant
 #if EAGAIN == EWOULDBLOCK
 #define ESOCKWOULDBLOCK EAGAIN
@@ -22,7 +24,7 @@ ListeningSocket::ListeningSocket(const std::string& port) {
   hints.ai_family = AF_INET;        // use IPV4
   hints.ai_socktype = SOCK_STREAM;  // TCP stream sockets
 
-  err = getaddrinfo(nullptr, port.c_str(), &hints, &res)
+  err = getaddrinfo(nullptr, port.c_str(), &hints, &res);
   if (err) {
     throw std::runtime_error("getaddrinfo(): " +
                              std::string(gai_strerror(err)));
@@ -36,7 +38,7 @@ ListeningSocket::ListeningSocket(const std::string& port) {
     }
 
     if (bind(sockfd, res_i->ai_addr, res->ai_addrlen) != 0) {
-      cause = "bind(): " + std::string(sterror(errno));
+      cause = "bind(): " + std::string(strerror(errno));
       close(sockfd);
       sockfd = -1;
       continue;
@@ -65,7 +67,7 @@ ListeningSocket::~ListeningSocket() {
 ConnectedSocket ListeningSocket::accept() {
   int connfd = ::accept(sockfd, nullptr, nullptr);
   if (connfd == -1) {
-    throw std::runtime_error("accept(): " + strerror(errno));
+    throw std::runtime_error("accept(): " + std::string(strerror(errno)));
   }
   return ConnectedSocket{connfd};
 }
@@ -95,7 +97,7 @@ ConnectedSocket::ConnectedSocket(const std::string& host,
     }
 
     if (connect(sockfd, res_i->ai_addr, res->ai_addrlen) != 0) {
-      cause = "connect(): " + std::string(sterror(errno));
+      cause = "connect(): " + std::string(strerror(errno));
       close(sockfd);
       sockfd = -1;
       continue;
@@ -114,7 +116,7 @@ ConnectedSocket::ConnectedSocket(int fd) { sockfd = fd; }
 
 ConnectedSocket::~ConnectedSocket() { close(sockfd); }
 
-std::string& ConnectedSocket::recv() {
+std::string ConnectedSocket::recv() {
   ssize_t nbytes;
   std::string acc;
 
@@ -128,7 +130,7 @@ std::string& ConnectedSocket::recv() {
       case ESOCKWOULDBLOCK:
         break;
       default:
-        throw std::runtime_error("recv(): " + strerror(errno));
+        throw std::runtime_error("recv(): " + std::string(strerror(errno)));
     }
   }
 
@@ -142,9 +144,9 @@ void ConnectedSocket::send(std::string& msg) {
   const char *strbuf = msg.c_str();
 
   while (total < msg.length()) {
-    nbytes = ::send(sockfd, strbuf + count, msg.length(), 0);
+    nbytes = ::send(sockfd, strbuf + total, msg.length(), 0);
     if (nbytes == -1) {
-      throw std::runtime_error("send(): " + strerror(errno));
+      throw std::runtime_error("send(): " + std::string(strerror(errno)));
     }
     total += nbytes;
   }
