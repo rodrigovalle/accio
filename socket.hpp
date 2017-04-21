@@ -6,24 +6,24 @@
 class ConnectedSocket;
 class ListeningSocket {
  public:
-	ListeningSocket(const std::string& port);
-	~ListeningSocket();
-	ListeningSocket(const ListeningSocket& that) = delete;
-	ConnectedSocket accept();
+  ListeningSocket(const std::string& port);
+  ~ListeningSocket();
+  ListeningSocket(const ListeningSocket& that) = delete;
+  ConnectedSocket accept();
 
  private:
-	int sockfd;
+  int sockfd;
 };
 
 class ConnectedSocket {
  public:
-	ConnectedSocket(const std::string& hostname, const std::string& port);
-	~ConnectedSocket();
-	ConnectedSocket(const ListeningSocket& that) = delete;
-	std::string& recv();
+  ConnectedSocket(const std::string& hostname, const std::string& port);
+  ~ConnectedSocket();
+  ConnectedSocket(const ListeningSocket& that) = delete;
+  std::string& recv();
 
  private:
-	ConnectedSocket(int fd);
-	int sockfd;
-	char buf[RECVBUF];
+  ConnectedSocket(int fd);
+  int sockfd;
+  char buf[RECVBUF];
 };
