@@ -10,8 +10,9 @@ class ConnectedSocket;
 class ListeningSocket {
  public:
   ListeningSocket(const std::string& port);
+  ListeningSocket(const ListeningSocket&) = delete;
+  ListeningSocket& operator=(const ListeningSocket&) = delete;
   ~ListeningSocket();
-  ListeningSocket(const ListeningSocket& that) = delete;
   ConnectedSocket accept();
 
  private:
@@ -23,8 +24,9 @@ class ConnectedSocket {
 
  public:
   ConnectedSocket(const std::string& host, const std::string& port);
+  ConnectedSocket(const ListeningSocket&) = delete;
+  ConnectedSocket& operator=(const ConnectedSocket&) = delete;
   ~ConnectedSocket();
-  ConnectedSocket(const ListeningSocket& that) = delete;
   std::string recv();
 
   /* Sends the entire string over the connection.

@@ -156,4 +156,3 @@ void ConnectedSocket::send(std::string& msg) {
     }
   }
 }
-}
