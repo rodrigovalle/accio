@@ -112,7 +112,7 @@ ConnectedSocket::ConnectedSocket(const std::string& host,
   }
 }
 
-ConnectedSocket::ConnectedSocket(int fd) { sockfd = fd; }
+ConnectedSocket::ConnectedSocket(int fd) : sockfd(fd) {}
 
 ConnectedSocket::~ConnectedSocket() { close(sockfd); }
 
