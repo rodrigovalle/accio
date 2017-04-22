@@ -1,6 +1,8 @@
 #include <string>
 #include <sys/types.h>
 
+const int REUSEADDR = TRUE;
+
 class ConnectedSocket;
 class File {
  public:

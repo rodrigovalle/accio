@@ -1,18 +1,11 @@
 #include "socket.hpp"
 
-#include <sys/socket.h>
-#include <sys/types.h>
 #include <netdb.h>
 #include <unistd.h>
+#include <sys/socket.h>
+#include <sys/types.h>
 
 #include <cstring>
-
-// Ugly hack to be POSIX compliant
-#if EAGAIN == EWOULDBLOCK
-#define ESOCKWOULDBLOCK EAGAIN
-#else
-#define ESOCKWOULDBLOCK EAGAIN: case EWOULDBLOCK
-#endif
 
 ListeningSocket::ListeningSocket(const std::string& port) {
   struct addrinfo hints = {0};
@@ -34,6 +27,16 @@ ListeningSocket::ListeningSocket(const std::string& port) {
     sockfd = socket(res_i->ai_family, res_i->ai_socktype, res_i->ai_protocol);
     if (sockfd == -1) {
       cause = "socket(): " + std::string(strerror(errno));
+      continue;
+    }
+
+    if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &REUSEADDR, nullptr) == -1) {
+      cause = "setsockopt(SO_REUSEADDR): " + std::string(strerror(errno));
+      continue;
+    }
+
+    if (setsockopt(sockfd, SOL_SOCKET, SO_SNDTIMEO, &timeout, nullptr) == -1) {
+      cause = "setsockopt(SO_SNDTIMEO): " + std::string(strerror(errno));
       continue;
     }
 
@@ -74,9 +77,10 @@ ConnectedSocket ListeningSocket::accept() {
 
 
 ConnectedSocket::ConnectedSocket(const std::string& host,
-                                 const std::string& port) {
+                                 const std::string& port)
   struct addrinfo hints = {0};
   struct addrinfo *res, *res_i;
+  struct timeval t;
   std::string cause;
   int err;
 
@@ -93,6 +97,11 @@ ConnectedSocket::ConnectedSocket(const std::string& host,
     sockfd = socket(res_i->ai_family, res_i->ai_socktype, res_i->ai_protocol);
     if (sockfd == -1) {
       cause = "socket(): " + std::string(strerror(errno));
+      continue;
+    }
+
+    if (setsockopt(sockfd, SOL_SOCKET, SO_SNDTIMEO, &timeout, nullptr) == -1) {
+      cause = "setsockopt(SO_SNDTIMEO): " + std::string(strerror(errno));
       continue;
     }
 
@@ -121,17 +130,19 @@ std::string ConnectedSocket::recv() {
   std::string acc;
 
   while ((nbytes = ::recv(sockfd, buf, SOCKBUF, 0)) > 0) {
-    acc += std::string(buf, nbytes);
-  }
-  if (nbytes == 0) {
-    throw sock_closed();
-  } else if (nbytes == -1) {
-    switch (errno) {
-      case ESOCKWOULDBLOCK:
-        break;
-      default:
-        throw std::runtime_error("recv(): " + std::string(strerror(errno)));
+    if (nbytes == 0) {
+      throw sock_closed();
+    } else if (nbytes == -1) {
+      switch (errno) {
+        case EINTR:
+          continue;
+        case EAGAIN:
+          throw std::runtime_error("hit time out limit");
+        default:
+          throw std::runtime_error("recv(): " + std::string(strerror(errno)));
+      }
     }
+    acc += std::string(buf, nbytes);
   }
 
   return acc;

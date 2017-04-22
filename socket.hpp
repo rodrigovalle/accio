@@ -1,8 +1,14 @@
 #include <string>
 #include <stdexcept>
+#include <time.h>
 
 #define BACKLOG 10
 #define SOCKBUF BUFSIZ
+#define TIMEOUT 10
+
+static struct timeval timeout;
+timeout.tv_sec = TIMEOUT;
+timeout.tv_usec = 0;
 
 class sock_closed : public std::exception {};
 
