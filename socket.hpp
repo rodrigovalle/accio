@@ -19,8 +19,10 @@ class ListeningSocket {
   int sockfd;
 };
 
+class File;
 class ConnectedSocket {
  friend ListeningSocket;
+ friend File;
 
  public:
   ConnectedSocket(const std::string& host, const std::string& port);
