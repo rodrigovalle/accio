@@ -2,7 +2,7 @@ CXX=g++
 CXXOPTIMIZE= -O2
 CXXFLAGS= -g -Wall -pthread -std=c++11 $(CXXOPTIMIZE)
 USERID=104494120
-CLASSES=
+CLASSES=file.cpp socket.cpp
 
 CHECKS=clang-analyzer-cplusplus*,cppcoreguidelines*,google*,llvm*,modernize*,readability*
 

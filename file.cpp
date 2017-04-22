@@ -22,6 +22,7 @@ File::~File() {
 File& File::operator=(File&& other) {
   fd = other.fd;
   other.fd = -1;
+  return *this;
 }
 
 File File::open(const std::string& file, int flags) {
@@ -34,18 +35,16 @@ File File::open(const std::string& file, int flags) {
 }
 
 void File::write_all(const char *buf, size_t nbytes) {
-  ssize_t total = 0;
-  ssize_t left = nbytes;
+  size_t total = 0;
   ssize_t n;
 
   while (total < nbytes) {
-    if ((n = ::write(fd, buf + total, left)) == -1) {
+    if ((n = ::write(fd, buf + total, nbytes - total)) == -1) {
       if (errno == EINTR) {
         continue;
       }
       throw std::runtime_error("write(): " + std::string(strerror(errno)));
     }
-    left -= n;
     total += n;
   }
 }
@@ -56,12 +55,12 @@ void File::sendfile(ConnectedSocket& sock) {
     throw std::runtime_error("fstat(): " + std::string(strerror(errno)));
   }
 
-  ssize_t sent;
-  off_t size = info.st_size;
+  size_t sent = 0;
+  size_t size = info.st_size;
   ssize_t n;
 
   while (sent < size) {
-    if ((n = ::sendfile(sock.sockfd, fd, NULL, size - sent)) != -1) {
+    if ((n = ::sendfile(sock.sockfd, fd, NULL, size - sent)) == -1) {
       if (errno == EINTR) {
         continue;
       }

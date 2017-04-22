@@ -33,70 +33,23 @@
  *     an error string starting with 'ERROR:' to standard error, and exit with
  *     non-zero code
  */
-#include "client.hpp"
-
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <unistd.h>
-#include <netdb.h>
-#include <fcntl.h>
+#include "file.hpp"
+#include "socket.hpp"
 
 #include <iostream>
 #include <string>
 
-Client::Client(const std::string& host, const std::string& port)
-    : sockfd(-1), filefd(-1) {
-  struct addrinfo hints = {0};
-  struct addrinfo *srv;
-
-  hints.ai_family = AF_INET;        // Looking for server using IPV4
-  hints.ai_socktype = SOCK_STREAM;  // Use TCP stream sockets
-
-  getaddrinfo(host.c_str(), port.c_str(), &hints, &srv);
-  sockfd = socket(srv->ai_family, srv->ai_socktype, srv->ai_protocol);
-  if (sockfd < 0) {
-    throw std::runtime_error("socket() failed");
-  }
-
-  if (connect(sockfd, srv->ai_addr, srv->ai_addrlen) < 0) {
-    throw std::runtime_error("connect() failed");
-  }
-}
-
-Client::~Client() {
-  close(sockfd);
-  close(filefd); /* call close in case we errored out */
-}
-
-void Client::send_file(const std::string& filename) {
-  int nbytes;
-
-  if ((filefd = open(filename.c_str(), O_RDONLY)) < 0) {
-    throw std::runtime_error("open() failed");
-  }
-
-  while ((nbytes = read(filefd, buf, READSIZ)) > 0) {
-    if (send(sockfd, buf, nbytes, 0) < 0) {
-      throw std::runtime_error("send() failed");
-    }
-  }
-  if (nbytes < 0) {
-    throw std::runtime_error("read() failed");
-  }
-  close(sockfd);
-  close(filefd);
-}
+static std::string usage = " <HOSTNAME-OR-IP> <PORT> <FILENAME>";
 
 int main(int argc, char* argv[]) {
   if (argc != 4) {
-    std::cerr << "Usage: " << argv[0] << " <HOSTNAME-OR-IP> <PORT> <FILENAME>"
-              << std::endl;
+    std::cerr << "Usage: " << argv[0] << usage << std::endl;
     return EXIT_FAILURE;
   }
+
   try {
-    Client c(argv[1], argv[2]);
-    c.send_file(argv[3]);
+    ConnectedSocket sock{argv[1], argv[2]};
+    File::open_r(argv[3]).sendfile(sock);
   } catch (std::runtime_error& e) {
     std::cerr << "ERROR: " << e.what() << std::endl;
     return EXIT_FAILURE;
