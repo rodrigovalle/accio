@@ -29,7 +29,20 @@ FileDescriptor FileDescriptor::open(const std::string& file, int flags) {
   int fd;
   fd = ::open(file.c_str(), flags);
   if (fd < 0) {
+    // TODO: retry on EINTR?
     throw std::runtime_error("open(): " + std::string(strerror(errno)));
+  }
+  return FileDescriptor{fd};
+}
+
+FileDescriptor FileDescriptor::openat(const FileDescriptor& dir,
+                                      const std::string& file,
+                                      int flags, int mode) {
+  int fd;
+  fd = ::openat(dir.fd, file.c_str(), flags);
+  if (fd < 0) {
+    // TODO: retry on EINTR?
+    throw std::runtime_error("openat(): " + std::string(strerror(errno)));
   }
   return FileDescriptor{fd};
 }
@@ -76,4 +89,15 @@ FileDescriptor FileDescriptor::open_r(const std::string& file) {
 
 FileDescriptor FileDescriptor::create_w(const std::string& file) {
   return FileDescriptor::open(file, O_RDONLY | O_CREAT | O_TRUNC);
+}
+
+FileDescriptor FileDescriptor::opendir(const std::string& dir) {
+  return FileDescriptor::open(dir, O_DIRECTORY);
+}
+
+FileDescriptor FileDescriptor::openat_cw(const FileDescriptor& dir,
+                                         const std::string& file) {
+  int flags = O_CREAT | O_WRONLY;
+  int mode = S_IWUSR | S_IRUSR;
+  return FileDescriptor::openat(dir, file, flags, mode);
 }
