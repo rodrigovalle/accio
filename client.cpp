@@ -49,7 +49,7 @@ int main(int argc, char* argv[]) {
 
   try {
     ConnectedSocket sock{argv[1], argv[2]};
-    File::open_r(argv[3]).sendfile(sock);
+    FileDescriptor::open_r(argv[3]).sendfile(sock);
   } catch (std::runtime_error& e) {
     std::cerr << "ERROR: " << e.what() << std::endl;
     return EXIT_FAILURE;

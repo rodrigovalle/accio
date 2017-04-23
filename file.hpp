@@ -2,24 +2,25 @@
 #include <sys/types.h>
 
 class ConnectedSocket;
-class File {
+class FileDescriptor {
  public:
-  File() = delete;
-  File(const File&) = delete;
-  File(File&&);
-  ~File();
+  FileDescriptor() = delete;
+  FileDescriptor(const FileDescriptor&) = delete;
+  FileDescriptor(FileDescriptor&&);
+  ~FileDescriptor();
 
-  File& operator=(const File&) = delete;
-  File& operator=(File&&);
+  FileDescriptor& operator=(const FileDescriptor&) = delete;
+  FileDescriptor& operator=(FileDescriptor&&);
 
   void write_all(const char *buf, size_t nbyte);
   void sendfile(ConnectedSocket& sock);
 
-  static File open_r(const std::string& file);
-  static File create_w(const std::string& file);
+  static FileDescriptor open_r(const std::string& file);
+  static FileDescriptor create_w(const std::string& file);
+  static FileDescriptor openat(FileDescriptor dir, 
 
  private:
-  static File open(const std::string& file, int flags);
-  File(int fd);
+  static FileDescriptor open(const std::string& file, int flags);
+  FileDescriptor(int fd);
   int fd;
 };

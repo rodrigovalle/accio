@@ -23,10 +23,10 @@ class ListeningSocket {
   int sockfd;
 };
 
-class File;
+class FileDescriptor;
 class ConnectedSocket {
  friend ListeningSocket;
- friend File;
+ friend FileDescriptor;
 
  public:
   ConnectedSocket(const std::string& host, const std::string& port);

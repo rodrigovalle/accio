@@ -10,31 +10,31 @@
 #include <cstring>
 #include <stdexcept>
 
-File::File(int fd) : fd(fd) {}
-File::File(File&& other) {
+FileDescriptor::FileDescriptor(int fd) : fd(fd) {}
+FileDescriptor::FileDescriptor(FileDescriptor&& other) {
   fd = other.fd;
   other.fd = -1;
 }
-File::~File() {
+FileDescriptor::~FileDescriptor() {
   close(fd);
 }
 
-File& File::operator=(File&& other) {
+FileDescriptor& FileDescriptor::operator=(FileDescriptor&& other) {
   fd = other.fd;
   other.fd = -1;
   return *this;
 }
 
-File File::open(const std::string& file, int flags) {
+FileDescriptor FileDescriptor::open(const std::string& file, int flags) {
   int fd;
   fd = ::open(file.c_str(), flags);
   if (fd < 0) {
     throw std::runtime_error("open(): " + std::string(strerror(errno)));
   }
-  return File{fd};
+  return FileDescriptor{fd};
 }
 
-void File::write_all(const char *buf, size_t nbytes) {
+void FileDescriptor::write_all(const char *buf, size_t nbytes) {
   size_t total = 0;
   ssize_t n;
 
@@ -49,7 +49,7 @@ void File::write_all(const char *buf, size_t nbytes) {
   }
 }
 
-void File::sendfile(ConnectedSocket& sock) {
+void FileDescriptor::sendfile(ConnectedSocket& sock) {
   struct stat info;
   if (fstat(fd, &info) == -1) {
     throw std::runtime_error("fstat(): " + std::string(strerror(errno)));
@@ -70,10 +70,10 @@ void File::sendfile(ConnectedSocket& sock) {
   }
 }
 
-File File::open_r(const std::string& file) {
-  return File::open(file, O_RDONLY);
+FileDescriptor FileDescriptor::open_r(const std::string& file) {
+  return FileDescriptor::open(file, O_RDONLY);
 }
 
-File File::create_w(const std::string& file) {
-  return File::open(file, O_RDONLY | O_CREAT | O_TRUNC);
+FileDescriptor FileDescriptor::create_w(const std::string& file) {
+  return FileDescriptor::open(file, O_RDONLY | O_CREAT | O_TRUNC);
 }
