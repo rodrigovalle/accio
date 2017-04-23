@@ -1,3 +1,6 @@
+#ifndef SOCKET_HPP
+#define SOCKET_HPP
+
 #include <string>
 #include <stdexcept>
 
@@ -40,3 +43,5 @@ class ConnectedSocket {
   int sockfd;
   char buf[SOCKBUF];
 };
+
+#endif // SOCKET_HPP

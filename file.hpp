@@ -1,3 +1,6 @@
+#ifndef FILE_HPP
+#define FILE_HPP
+
 #include <string>
 #include <sys/types.h>
 
@@ -28,3 +31,5 @@ class FileDescriptor {
   FileDescriptor(int fd);
   int fd;
 };
+
+#endif // FILE_HPP

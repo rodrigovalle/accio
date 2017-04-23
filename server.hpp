@@ -1,3 +1,9 @@
+#ifndef SERVER_HPP
+#define SERVER_HPP
+
+#include "socket.hpp"
+#include "file.hpp"
+
 #include <string>
 #include <thread>
 #include <vector>
@@ -24,3 +30,5 @@ class Server {
 
   std::vector<std::thread> threads;
 };
+
+#endif // SERVER_HPP
