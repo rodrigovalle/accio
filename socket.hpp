@@ -1,14 +1,12 @@
 #include <string>
 #include <stdexcept>
-#include <time.h>
 
 #define BACKLOG 10
 #define SOCKBUF BUFSIZ
-#define TIMEOUT 10
-
-static struct timeval timeout;
-timeout.tv_sec = TIMEOUT;
-timeout.tv_usec = 0;
+#define REUSEADDR 1
+#define TIMEOUT 5
+// TODO: if I set this to 5, socket operations time out in 10 seconds
+// I don't know why :(
 
 class sock_closed : public std::exception {};
 
@@ -36,10 +34,6 @@ class ConnectedSocket {
   ConnectedSocket& operator=(const ConnectedSocket&) = delete;
   ~ConnectedSocket();
   std::string recv();
-
-  /* Sends the entire string over the connection.
-   * TODO: fix the SOCK_NONBLOCK case */
-  void send(std::string& msg);
 
  private:
   ConnectedSocket(int fd);

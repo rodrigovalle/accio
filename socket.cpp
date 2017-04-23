@@ -7,10 +7,14 @@
 
 #include <cstring>
 
+static const struct timeval timeout = {.tv_sec=TIMEOUT, .tv_usec=0};
+
 ListeningSocket::ListeningSocket(const std::string& port) {
   struct addrinfo hints = {0};
   struct addrinfo *res, *res_i;
+
   int err;
+  int reuseaddr = REUSEADDR;
   std::string cause;
 
   hints.ai_flags = AI_PASSIVE;      // we will bind to this socket
@@ -30,12 +34,14 @@ ListeningSocket::ListeningSocket(const std::string& port) {
       continue;
     }
 
-    if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &REUSEADDR, nullptr) == -1) {
+    if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &reuseaddr,
+                   sizeof(reuseaddr)) == -1) {
       cause = "setsockopt(SO_REUSEADDR): " + std::string(strerror(errno));
       continue;
     }
 
-    if (setsockopt(sockfd, SOL_SOCKET, SO_SNDTIMEO, &timeout, nullptr) == -1) {
+    if (setsockopt(sockfd, SOL_SOCKET, SO_SNDTIMEO, &timeout,
+                   sizeof(timeout)) == -1) {
       cause = "setsockopt(SO_SNDTIMEO): " + std::string(strerror(errno));
       continue;
     }
@@ -77,10 +83,9 @@ ConnectedSocket ListeningSocket::accept() {
 
 
 ConnectedSocket::ConnectedSocket(const std::string& host,
-                                 const std::string& port)
+                                 const std::string& port) {
   struct addrinfo hints = {0};
   struct addrinfo *res, *res_i;
-  struct timeval t;
   std::string cause;
   int err;
 
@@ -100,13 +105,22 @@ ConnectedSocket::ConnectedSocket(const std::string& host,
       continue;
     }
 
-    if (setsockopt(sockfd, SOL_SOCKET, SO_SNDTIMEO, &timeout, nullptr) == -1) {
+    if (setsockopt(sockfd, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout)) == -1) {
       cause = "setsockopt(SO_SNDTIMEO): " + std::string(strerror(errno));
+      close(sockfd);
+      sockfd = -1;
       continue;
     }
 
-    if (connect(sockfd, res_i->ai_addr, res->ai_addrlen) != 0) {
-      cause = "connect(): " + std::string(strerror(errno));
+    if (connect(sockfd, res_i->ai_addr, res->ai_addrlen) == -1) {
+      switch (errno) {
+        case EINPROGRESS:
+          cause = "connect(): connection timed out";
+          break;
+        default:
+          cause = "connect(): " + std::string(strerror(errno));
+          break;
+      }
       close(sockfd);
       sockfd = -1;
       continue;
@@ -137,7 +151,7 @@ std::string ConnectedSocket::recv() {
         case EINTR:
           continue;
         case EAGAIN:
-          throw std::runtime_error("hit time out limit");
+          throw std::runtime_error("recv(): connection timed out");
         default:
           throw std::runtime_error("recv(): " + std::string(strerror(errno)));
       }
@@ -146,21 +160,4 @@ std::string ConnectedSocket::recv() {
   }
 
   return acc;
-}
-
-void ConnectedSocket::send(std::string& msg) {
-  ssize_t nbytes = 0;
-  size_t total = 0;
-  std::string acc;
-  const char *strbuf = msg.c_str();
-
-  while (total < msg.length()) {
-    if ((nbytes = ::send(sockfd, strbuf + total, msg.length(), 0)) == -1) {
-      if (errno == EINTR) {
-        continue;
-      }
-      throw std::runtime_error("send(): " + std::string(strerror(errno)));
-    }
-    total += nbytes;
-  }
 }
