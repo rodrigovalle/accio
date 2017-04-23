@@ -33,6 +33,7 @@
  *   - The server should be able to accept and save files up to 100 MiB
  */
 #include "server.hpp"
+#include "socket.hpp"
 
 #include <fcntl.h>
 #include <netdb.h>
@@ -47,67 +48,16 @@
 #include <vector>
 
 Server::Server(const std::string& port, const std::string& file_directory)
-    : dir_fd(-1), sock_fd(-1), client_count(0), threads(THREADS) {
-  struct addrinfo hints = {0};
-  struct addrinfo* res;
-  int status;
+    : sock(port), client_count(0), threads(THREADS) {
 
   /* check your privilege
    * NOTE: man pages warn that access() has a race condition, but we're not
    *       using it to give permissions, just perform a sanity check */
-  dir_fd = open(file_directory.c_str(), O_DIRECTORY);
-  if (dir_fd < 0) {
-    throw std::runtime_error("invalid directory " + file_directory);
-  }
-  if (faccessat(dir_fd, ".", W_OK, 0) != 0) {
+  if (access(file_directory.c_str(), W_OK) == -1) {
     throw std::runtime_error("no write permissions in " + file_directory);
   }
 
-  /* create a new socket */
-  hints.ai_family = AF_INET;        // Use IPV4
-  hints.ai_socktype = SOCK_STREAM;  // Use TCP stream sockets
-  hints.ai_protocol = 0;            // let getaddrinfo() pick the protocol
-  hints.ai_flags = AI_PASSIVE;      // fill in my IP (be interface independent)
-
-  if ((status = getaddrinfo(nullptr, port.c_str(), &hints, &res)) != 0) {
-    std::string error_str(gai_strerror(status));
-    throw std::runtime_error("getaddrinfo() failed: " + error_str);
-  }
-
- /* for (auto* res_i = res; res_i != NULL; res_i = res_i->ai_next) {
-  *   std::cout << "ai_addr:      " << res_i->ai_addr << std::endl;
-  *   std::cout << "ai_family:    ";
-  *   switch (res_i->ai_family) {
-  *     case AF_UNIX:
-  *       std::cout << "AF_UNIX";
-  *       break;
-  *     case AF_INET:
-  *       std::cout << "AF_INET";
-  *       break;
-  *     case AF_INET6:
-  *       std::cout << "AF_INET6";
-  *       break;
-  *   }
-  *   std::cout << std::endl;
-  *   std::cout << "ai_socktype:  " << res_i->ai_socktype << std::endl;
-  *   std::cout << "ai_protocol:  " << res_i->ai_protocol << std::endl;
-  * }
-  */
-
-  sock_fd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
-  if (sock_fd < 0) {
-    throw std::runtime_error("socket() failed");
-  }
-
-  /* bind to port (SO_REUSEADDR?) */
-  if (bind(sock_fd, res->ai_addr, res->ai_addrlen) != 0) {
-    throw std::runtime_error("bind() failed");
-  }
-
-  /* listen */
-  if (listen(sock_fd, BACKLOG) != 0) {
-    throw std::runtime_error("listen() failed");
-  }
+  dir = FileDescriptor::opendir(file_directory);
 }
 
 Server::~Server() {
@@ -116,58 +66,35 @@ Server::~Server() {
    *  - exit all running threads
    *  - close all open files      */
 
-  /* stop accepting connections */
-  close(sock_fd);
-
   /* wait for all threads to finish */
   for (std::thread& t : threads) {
     t.join();
   }
-
-  /* close the directory */
-  close(dir_fd);
 }
 
-void Server::start_server() {
+void Server::start() {
   while (true) {
-    int client_fd = accept(sock_fd, nullptr, nullptr);
-    if (client_fd < 0) {
-      /* TODO: this error probably shouldn't bring down our whole server */
-      throw std::runtime_error("accept() failed");
-    }
+    ConnectedSocket client_conn = sock.accept();
 
     /* create a new thread to handle the connection and continue waiting for
      * new connections */
-    threads.emplace_back(&Server::recv_file, this, client_fd, client_count);
+    threads.emplace_back(&Server::recv_file, this, std::move(client_conn), client_count);
     client_count++;
   }
 }
 
-void Server::recv_file(int client_fd, int client_id) {
-  int file_fd;
-  ssize_t nbytes;
+void Server::recv_file(ConnectedSocket client, int client_id) {
   std::string fname = std::to_string(client_id) + ".file";
+  FileDescriptor outfile = FileDescriptor::openat_cw(dir, fname);
 
-  file_fd =
-      openat(dir_fd, fname.c_str(), O_CREAT | O_WRONLY, S_IWUSR | S_IRUSR);
-  if (file_fd < 0) {
-    /* TODO: what happens if a thread throws an exception? */
-    throw std::runtime_error("could not create file " + fname);
-  }
-
-  while ((nbytes = recv(client_fd, buf, RECV_BUF, 0)) > 0) {
-    if (write(file_fd, buf, nbytes) < 0) {
-      throw std::runtime_error("write() failed");
+  try {
+    while (1) {
+      std::string chunk = client.recv();
+      outfile.write_all(chunk);
     }
+  } catch (socket_closed_exception& e) {
+    return;
   }
-  /* TODO:
-   *  - fix this error checking for recv() and close()
-   *  - won't close the file descriptors properly if we error out */
-  if (nbytes < 0) {
-    throw std::runtime_error("recv() failed");
-  }
-  close(file_fd);
-  close(client_fd);
 }
 
 int main(int argc, char* argv[]) {
@@ -178,7 +105,7 @@ int main(int argc, char* argv[]) {
 
   try {
     Server s{argv[1], argv[2]};
-    s.start_server();
+    s.start();
   } catch (std::runtime_error& e) {
     std::cerr << "ERROR: " << e.what() << std::endl;
     return EXIT_FAILURE;

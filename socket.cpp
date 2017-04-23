@@ -76,6 +76,7 @@ ListeningSocket::~ListeningSocket() {
 ConnectedSocket ListeningSocket::accept() {
   int connfd = ::accept(sockfd, nullptr, nullptr);
   if (connfd == -1) {
+    // TODO: errno is EINTR?
     throw std::runtime_error("accept(): " + std::string(strerror(errno)));
   }
   return ConnectedSocket{connfd};
@@ -137,16 +138,25 @@ ConnectedSocket::ConnectedSocket(const std::string& host,
 
 ConnectedSocket::ConnectedSocket(int fd) : sockfd(fd) {}
 
+ConnectedSocket::ConnectedSocket(ConnectedSocket&& other) {
+  sockfd = other.sockfd;
+  other.sockfd = -1;
+}
+
 ConnectedSocket::~ConnectedSocket() { close(sockfd); }
+
+ConnectedSocket& ConnectedSocket::operator=(ConnectedSocket&& other) {
+  sockfd = other.sockfd;
+  other.sockfd = -1;
+  return *this;
+}
 
 std::string ConnectedSocket::recv() {
   ssize_t nbytes;
-  std::string acc;
 
-  while ((nbytes = ::recv(sockfd, buf, SOCKBUF, 0)) > 0) {
-    if (nbytes == 0) {
-      throw sock_closed();
-    } else if (nbytes == -1) {
+  while (1) {
+    nbytes = ::recv(sockfd, buf, SOCKBUF, 0);
+    if (nbytes == -1) {
       switch (errno) {
         case EINTR:
           continue;
@@ -156,8 +166,9 @@ std::string ConnectedSocket::recv() {
           throw std::runtime_error("recv(): " + std::string(strerror(errno)));
       }
     }
-    acc += std::string(buf, nbytes);
+    else if (nbytes == 0) {
+      throw socket_closed_exception();
+    }
+    return std::string(buf, nbytes);
   }
-
-  return acc;
 }

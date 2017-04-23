@@ -39,7 +39,7 @@ FileDescriptor FileDescriptor::openat(const FileDescriptor& dir,
                                       const std::string& file,
                                       int flags, int mode) {
   int fd;
-  fd = ::openat(dir.fd, file.c_str(), flags);
+  fd = ::openat(dir.fd, file.c_str(), flags, mode);
   if (fd < 0) {
     // TODO: retry on EINTR?
     throw std::runtime_error("openat(): " + std::string(strerror(errno)));
@@ -47,11 +47,13 @@ FileDescriptor FileDescriptor::openat(const FileDescriptor& dir,
   return FileDescriptor{fd};
 }
 
-void FileDescriptor::write_all(const char *buf, size_t nbytes) {
+void FileDescriptor::write_all(const std::string& data) {
+  const char *buf = data.c_str();
+  size_t nbytes = data.size();
   size_t total = 0;
   ssize_t n;
 
-  while (total < nbytes) {
+  do {
     if ((n = ::write(fd, buf + total, nbytes - total)) == -1) {
       if (errno == EINTR) {
         continue;
@@ -59,7 +61,7 @@ void FileDescriptor::write_all(const char *buf, size_t nbytes) {
       throw std::runtime_error("write(): " + std::string(strerror(errno)));
     }
     total += n;
-  }
+  } while (total < nbytes);
 }
 
 void FileDescriptor::sendfile(ConnectedSocket& sock) {

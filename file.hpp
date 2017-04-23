@@ -7,7 +7,7 @@
 class ConnectedSocket;
 class FileDescriptor {
  public:
-  FileDescriptor() = delete;
+  FileDescriptor() : FileDescriptor(-1) {};
   FileDescriptor(const FileDescriptor&) = delete;
   FileDescriptor(FileDescriptor&&);
   ~FileDescriptor();
@@ -15,7 +15,7 @@ class FileDescriptor {
   FileDescriptor& operator=(const FileDescriptor&) = delete;
   FileDescriptor& operator=(FileDescriptor&&);
 
-  void write_all(const char *buf, size_t nbyte);
+  void write_all(const std::string& data);
   void sendfile(ConnectedSocket& sock);
 
   static FileDescriptor open_r(const std::string& file);

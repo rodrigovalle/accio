@@ -11,15 +11,16 @@
 // TODO: if I set this to 5, socket operations time out in 10 seconds
 // I don't know why :(
 
-class sock_closed : public std::exception {};
+class socket_closed_exception : public std::exception {};
 
 class ConnectedSocket;
 class ListeningSocket {
  public:
   ListeningSocket(const std::string& port);
   ListeningSocket(const ListeningSocket&) = delete;
-  ListeningSocket& operator=(const ListeningSocket&) = delete;
   ~ListeningSocket();
+  // TODO: declare move constructor & move assignment for ListeningSocket?
+  ListeningSocket& operator=(const ListeningSocket&) = delete;
   ConnectedSocket accept();
 
  private:
@@ -34,8 +35,12 @@ class ConnectedSocket {
  public:
   ConnectedSocket(const std::string& host, const std::string& port);
   ConnectedSocket(const ListeningSocket&) = delete;
-  ConnectedSocket& operator=(const ConnectedSocket&) = delete;
+  ConnectedSocket(ConnectedSocket&&);
   ~ConnectedSocket();
+
+  ConnectedSocket& operator=(const ConnectedSocket&) = delete;
+  ConnectedSocket& operator=(ConnectedSocket&&);
+
   std::string recv();
 
  private:
