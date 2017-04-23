@@ -16,7 +16,14 @@ themselves before program termination.
 
 ## Notes
 ### Where are all the merge commits, didn't you use feature branches?
-I avoided them through gratuitous use of fast-foward merges and rebasing.
+I avoided a lot of them through gratuitous use of fast-foward merges and
+rebasing.
+
+### How could this project be improved?
+I could introduce a class hierarchy instead of relying on friend classes; that
+is, ListeningSocket and ConnectedSocket should use FileDescriptor objects to
+keep track of their socket file descriptors, instead of handling them on their
+own.
 
 ## Acknowledgements
 

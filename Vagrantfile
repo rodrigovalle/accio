@@ -14,7 +14,7 @@ Vagrant.configure(2) do |config|
 
   config.vm.provision "shell", inline: <<-SHELL
     sudo apt-get update
-    sudo apt-get install -y build-essential man-db manpages-dev \
-                            manpages-posix-dev vim emacs git clang-format
+    sudo apt-get install -y build-essential vim emacs git clang-format \
+                            man-db manpages manpages-dev manpages-posix-dev
   SHELL
 end
