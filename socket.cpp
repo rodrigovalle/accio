@@ -7,14 +7,46 @@
 
 #include <cstring>
 
-static const struct timeval timeout = {.tv_sec=TIMEOUT, .tv_usec=0};
+/* TODO: these helper functions should probably be a static function of some
+ *       Socket superclass */
+void set_socket_sndtimeout(int sockfd) {
+  // affects connect() and send()
+  struct timeval val;
+  val.tv_sec = TIMEOUT;
+  val.tv_usec = 0;
+
+  if (setsockopt(sockfd, SOL_SOCKET, SO_SNDTIMEO, &val, sizeof(val)) == -1) {
+    throw std::runtime_error("setsockopt(SO_SNDTIMEO): " +
+                             std::string(strerror(errno)));
+  }
+}
+
+void set_socket_rcvtimeout(int sockfd) {
+  // affects accept() and recv()
+  struct timeval val;
+  val.tv_sec = TIMEOUT;
+  val.tv_usec = 0;
+
+  if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, &val, sizeof(val)) == -1) {
+    throw std::runtime_error("setsockopt(SO_RCVTIMEO): " +
+                             std::string(strerror(errno)));
+  }
+}
+
+void set_socket_reuseaddr(int sockfd) {
+  int val = REUSEADDR;
+
+  if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val)) == -1) {
+    throw std::runtime_error("setsockopt(SO_REUSEADDR): " +
+                             std::string(strerror(errno)));
+  }
+}
 
 ListeningSocket::ListeningSocket(const std::string& port) {
   struct addrinfo hints = {0};
   struct addrinfo *res, *res_i;
 
   int err;
-  int reuseaddr = REUSEADDR;
   std::string cause;
 
   hints.ai_flags = AI_PASSIVE;      // we will bind to this socket
@@ -34,15 +66,12 @@ ListeningSocket::ListeningSocket(const std::string& port) {
       continue;
     }
 
-    if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &reuseaddr,
-                   sizeof(reuseaddr)) == -1) {
-      cause = "setsockopt(SO_REUSEADDR): " + std::string(strerror(errno));
-      continue;
-    }
-
-    if (setsockopt(sockfd, SOL_SOCKET, SO_SNDTIMEO, &timeout,
-                   sizeof(timeout)) == -1) {
-      cause = "setsockopt(SO_SNDTIMEO): " + std::string(strerror(errno));
+    try {
+      set_socket_reuseaddr(sockfd);
+    } catch (std::runtime_error& e) {
+      cause = e.what();
+      close(sockfd);
+      sockfd = -1;
       continue;
     }
 
@@ -74,12 +103,21 @@ ListeningSocket::~ListeningSocket() {
 }
 
 ConnectedSocket ListeningSocket::accept() {
-  int connfd = ::accept(sockfd, nullptr, nullptr);
-  if (connfd == -1) {
-    // TODO: errno is EINTR?
-    throw std::runtime_error("accept(): " + std::string(strerror(errno)));
+  int connfd;
+
+  while (1) {
+    connfd = ::accept(sockfd, nullptr, nullptr);
+    if (connfd == -1) {
+      switch (errno) {
+        case EINTR:
+          continue;
+        default:
+          throw std::runtime_error("accept(): " + std::string(strerror(errno)));
+      }
+    }
+    set_socket_rcvtimeout(connfd);  // TODO: server class should set timeout
+    return ConnectedSocket{connfd};
   }
-  return ConnectedSocket{connfd};
 }
 
 
@@ -106,8 +144,10 @@ ConnectedSocket::ConnectedSocket(const std::string& host,
       continue;
     }
 
-    if (setsockopt(sockfd, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout)) == -1) {
-      cause = "setsockopt(SO_SNDTIMEO): " + std::string(strerror(errno));
+    try {
+      set_socket_sndtimeout(sockfd);
+    } catch (std::runtime_error& e) {
+      cause = e.what();
       close(sockfd);
       sockfd = -1;
       continue;
@@ -161,7 +201,7 @@ std::string ConnectedSocket::recv() {
         case EINTR:
           continue;
         case EAGAIN:
-          throw std::runtime_error("recv(): connection timed out");
+          throw socket_timeout_error();
         default:
           throw std::runtime_error("recv(): " + std::string(strerror(errno)));
       }

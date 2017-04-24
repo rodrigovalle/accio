@@ -4,6 +4,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/stat.h>
+#include <sys/types.h>
 #include <sys/sendfile.h>
 
 #include <cerrno>
@@ -82,6 +83,21 @@ void FileDescriptor::sendfile(ConnectedSocket& sock) {
       throw std::runtime_error("sendfile(): " + std::string(strerror(errno)));
     }
     sent += n;
+  }
+}
+
+void FileDescriptor::clear() {
+  while (1) {
+    if (ftruncate(fd, 0) == -1) {
+      if (errno == EINTR) {
+        continue;
+      }
+      throw std::runtime_error("ftruncate(): " + std::string(strerror(errno)));
+    }
+    if (lseek(fd, 0, SEEK_SET) == -1) {
+      throw std::runtime_error("lseek(): " + std::string(strerror(errno)));
+    }
+    return;
   }
 }
 

@@ -50,14 +50,14 @@
 Server::Server(const std::string& port, const std::string& file_directory)
     : sock(port), client_count(0), threads(THREADS) {
 
+  dir = FileDescriptor::opendir(file_directory);
+
   /* check your privilege
    * NOTE: man pages warn that access() has a race condition, but we're not
    *       using it to give permissions, just perform a sanity check */
   if (access(file_directory.c_str(), W_OK) == -1) {
     throw std::runtime_error("no write permissions in " + file_directory);
   }
-
-  dir = FileDescriptor::opendir(file_directory);
 }
 
 Server::~Server() {
@@ -92,6 +92,10 @@ void Server::recv_file(ConnectedSocket client, int client_id) {
       std::string chunk = client.recv();
       outfile.write_all(chunk);
     }
+  } catch (socket_timeout_error& e) {
+    outfile.clear();
+    outfile.write_all("ERROR: socket timed out");
+    return;
   } catch (socket_closed_exception& e) {
     return;
   }

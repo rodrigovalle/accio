@@ -12,6 +12,10 @@
 // I don't know why :(
 
 class socket_closed_exception : public std::exception {};
+class socket_timeout_error : public std::runtime_error {
+ public:
+  socket_timeout_error() : std::runtime_error("socket timed out") {}
+};
 
 class ConnectedSocket;
 class ListeningSocket {

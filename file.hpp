@@ -17,6 +17,7 @@ class FileDescriptor {
 
   void write_all(const std::string& data);
   void sendfile(ConnectedSocket& sock);
+  void clear();
 
   static FileDescriptor open_r(const std::string& file);
   static FileDescriptor create_w(const std::string& file);
