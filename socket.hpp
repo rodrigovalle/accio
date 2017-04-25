@@ -5,7 +5,7 @@
 #include <stdexcept>
 
 #define BACKLOG 10
-#define SOCKBUF BUFSIZ
+#define SOCKBUF 87380  // chosen using cat /proc/sys/net/ipv4/tcp_rmem
 #define REUSEADDR 1
 #define TIMEOUT 10
 

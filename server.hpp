@@ -10,7 +10,6 @@
 
 #define BACKLOG 10
 #define THREADS 10
-#define RECVSIZ BUFSIZ
 
 class Server {
  public:
