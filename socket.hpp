@@ -7,9 +7,7 @@
 #define BACKLOG 10
 #define SOCKBUF BUFSIZ
 #define REUSEADDR 1
-#define TIMEOUT 5
-// TODO: if I set this to 5, socket operations time out in 10 seconds
-// I don't know why :(
+#define TIMEOUT 10
 
 class socket_closed_exception : public std::exception {};
 class socket_timeout_error : public std::runtime_error {

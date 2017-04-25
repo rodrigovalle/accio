@@ -12,7 +12,7 @@
 void set_socket_sndtimeout(int sockfd) {
   // affects connect() and send()
   struct timeval val;
-  val.tv_sec = TIMEOUT;
+  val.tv_sec = TIMEOUT/2;  // XXX: make client connect timeout 10s (kernel bug?)
   val.tv_usec = 0;
 
   if (setsockopt(sockfd, SOL_SOCKET, SO_SNDTIMEO, &val, sizeof(val)) == -1) {
