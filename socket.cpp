@@ -53,7 +53,15 @@ ListeningSocket::ListeningSocket(const std::string& port) {
   hints.ai_family = AF_INET;        // use IPV4
   hints.ai_socktype = SOCK_STREAM;  // TCP stream sockets
 
-  err = getaddrinfo(nullptr, port.c_str(), &hints, &res);
+  /* the OS will let you choose port 0 even though it's not really a port;
+   * instead, it'll choose some unused port greater than port 1023.
+   * check for this, because according to the spec port 0 is not allowed */
+  int portnum = atoi(port.c_str());
+  if (portnum == 0) {
+    throw std::runtime_error{"invalid port"};
+  }
+
+  err = getaddrinfo("0.0.0.0", port.c_str(), &hints, &res);
   if (err) {
     throw std::runtime_error{"getaddrinfo(): " +
                              std::string{gai_strerror(err)}};

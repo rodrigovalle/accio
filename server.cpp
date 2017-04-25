@@ -54,7 +54,10 @@
 #include <cstdlib>
 
 Server::Server(const std::string& port, const std::string& file_directory)
-    : sock(port), n_conn(0), threads(THREADS) {
+    : sock(port), n_conn(1) {
+  /* number connections starting from 1 or we'll fail a bunch of test cases.
+   * isn't this a CS class though I mean let's be real here,
+   * they should be zero indexed */
 
   dir = FileDescriptor::opendir(file_directory);
 
@@ -172,7 +175,7 @@ int main(int argc, char* argv[]) {
   try {
     sigset_t blocked;
     block_signals(&blocked);
-    std::thread t{handle_signals, &blocked};
+    std::thread{handle_signals, &blocked}.detach();
     Server s{argv[1], argv[2]};
     s.start();
 

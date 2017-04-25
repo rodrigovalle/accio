@@ -26,9 +26,6 @@ class Server {
   FileDescriptor dir;
   ListeningSocket sock;
   int n_conn;
-
-  // TODO: poor man's threadpool :(
-  std::vector<std::thread> threads;
 };
 
 #endif // SERVER_HPP
