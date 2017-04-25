@@ -80,8 +80,32 @@ corresponding system calls would not block. This event loop could be
 replicated across multiple processes, and the evented design would make sure we
 make the most out of each process. To my knowledge, NGINX uses this design.
 
-## Acknowledgements
+## Docker
+To get started, run
+``` bash
+# build the docker image from the Dockerfile
+$ docker build . -t accio
 
+# run in a container whose port 3000 is mapped to the host's port 3000
+$ docker run --name accio-container -d -p 3000:3000 accio
+```
+
+Now we can open another terminal and start sending files to the server by
+connecting to the host's port 3000 (e.g. `./client 3000 file.txt` or
+`telnet localhost 3000`). The server will store them locally inside the
+container. If we want to see these files, we can run
+
+``` bash
+$ docker exec -it accio-container /bin/bash
+```
+to get a shell inside the running container and `cat` our files. Next, run
+
+``` bash
+$ docker stop accio-container
+```
+to stop the container.
+
+## Acknowledgements
 [cplusplus.com](http://www.cplusplus.com/reference)  
 [C++ Reference](http://en.cppreference.com/w/cpp)  
 [How to end C++ code](http://stackoverflow.com/questions/30250934)  
