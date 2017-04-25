@@ -25,7 +25,7 @@ class Server {
  private:
   FileDescriptor dir;
   ListeningSocket sock;
-  int client_count;
+  int n_conn;
 
   // TODO: poor man's threadpool :(
   std::vector<std::thread> threads;
