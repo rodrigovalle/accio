@@ -5,7 +5,9 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 
+#include <cerrno>
 #include <cstring>
+#include <cstdlib>
 
 /* TODO: these helper functions should probably be a static function of some
  *       Socket superclass */
@@ -207,7 +209,7 @@ std::string ConnectedSocket::recv() {
   else if (nbytes == 0) {
     throw socket_closed_exception();
   }
-  return std::string{buf, nbytes};
+  return std::string{buf, static_cast<size_t>(nbytes)};
 }
 
 void ConnectedSocket::send_all(const std::string& data) {

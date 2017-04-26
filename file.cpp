@@ -63,7 +63,7 @@ void FileDescriptor::sendfile(ConnectedSocket& sock) {
   ssize_t n;
 
   while ((n = read(fd, buf, BLOCKSIZE)) > 0) {
-    sock.send_all(std::string{buf, n});
+    sock.send_all(std::string{buf, static_cast<size_t>(n)});
   }
   if (n == -1) {
     throw std::runtime_error{"read(): " + std::string{strerror(errno)}};
