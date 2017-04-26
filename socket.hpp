@@ -44,6 +44,7 @@ class ConnectedSocket {
   ConnectedSocket& operator=(ConnectedSocket&&);
 
   std::string recv();
+  void send_all(const std::string& data);
 
  private:
   ConnectedSocket(int fd);

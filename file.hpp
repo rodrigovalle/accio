@@ -4,6 +4,8 @@
 #include <string>
 #include <sys/types.h>
 
+#define BLOCKSIZE 4096 // given by blockdev --getbsz /dev/sda5
+
 class ConnectedSocket;
 class FileDescriptor {
  public:
@@ -31,6 +33,7 @@ class FileDescriptor {
                                const std::string& file, int flags, int mode);
   FileDescriptor(int fd);
   int fd;
+  char* buf[BLOCKSIZE];
 };
 
 #endif // FILE_HPP

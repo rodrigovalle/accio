@@ -54,9 +54,6 @@ void FileDescriptor::write_all(const std::string& data) {
 
   do {
     if ((n = ::write(fd, buf + total, nbytes - total)) == -1) {
-      if (errno == EINTR) {
-        continue;
-      }
       throw std::runtime_error{"write(): " + std::string{strerror(errno)}};
     }
     total += n;
@@ -64,24 +61,14 @@ void FileDescriptor::write_all(const std::string& data) {
 }
 
 void FileDescriptor::sendfile(ConnectedSocket& sock) {
-  struct stat info;
-  if (fstat(fd, &info) == -1) {
-    throw std::runtime_error{"fstat(): " + std::string{strerror(errno)}};
-  }
-
-  size_t size = info.st_size;
-  size_t sent = 0;
   ssize_t n;
 
-  do {
-    if ((n = ::sendfile(sock.sockfd, fd, NULL, size - sent)) == -1) {
-      if (errno == EINTR) {
-        continue;
-      }
-      throw std::runtime_error{"sendfile(): " + std::string{strerror(errno)}};
-    }
-    sent += n;
-  } while (sent < size);
+  while ((n = read(fd, buf, BLOCKSIZE)) > 0) {
+    sock.send_all(std::string(buf, n));
+  }
+  if (n == -1) {
+    throw std::runtime_error{"read(): " + std::string{strerror(errno)}};
+  }
 }
 
 void FileDescriptor::clear() {

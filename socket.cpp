@@ -209,3 +209,17 @@ std::string ConnectedSocket::recv() {
   }
   return std::string{buf, nbytes};
 }
+
+void ConnectedSocket::send_all(const std::string& data) {
+  const char *buf = data.c_str();
+  size_t nbytes = data.size();
+  size_t total = 0;
+  ssize_t n;
+
+  do {
+    if ((n = ::send(sockfd, buf + total, nbytes - total, 0)) == -1) {
+      throw std::runtime_error{"send(): " + std::string{strerror(errno)}};
+    }
+    total += n;
+  } while (total < nbytes);
+}
