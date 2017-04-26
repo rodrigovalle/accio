@@ -1,0 +1,18 @@
+   TEST                                                 |  PASSED  |  PUBLIC?
+------------------------------------------------------- | -------- | ---------
+2  Client handles incorrect hostname/port               |  [X]     |  yes
+3  Server handles incorrect port                        |  [X]     |  yes
+4  Server handles SIGTERM/SIGQUIT                       |  [X]     |  yes
+5  Client connects and transmits file                   |  [X]     |  yes
+6  Server accepts a connection and saves file           |  [X]     |  yes
+7  Client successfully transmits 500B file              |  [X]     |  yes
+8  Client successfully transmits 1MiB file              |  [X]     |  no
+9  Client successfully transmits 100MiB file            |  [X]     |  no
+10 Server successfully recieves 500B file               |  [X]     |  yes
+11 Server successfully recieves 1MiB file               |  [X]     |  no
+12 Server successfully recieves 100MiB file             |  [X]     |  no
+13 Server handles 10 connections (seq and parallel)     |  [X]     |  no
+14 Client handles abort connection attempt (10s timeo)  |  [X]     |  yes
+15 Client aborts connection when server disconnected    |  [X]     |  no
+16 Server aborts connection (ERROR: file) on 10s timeo  |  [X]     |  no
+17 Client+server send/recv large file over lossy conn   |  [X]     |  no
