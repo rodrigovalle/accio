@@ -5,7 +5,6 @@
 #include <unistd.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <sys/sendfile.h>
 
 #include <cerrno>
 #include <cstring>
@@ -64,7 +63,7 @@ void FileDescriptor::sendfile(ConnectedSocket& sock) {
   ssize_t n;
 
   while ((n = read(fd, buf, BLOCKSIZE)) > 0) {
-    sock.send_all(std::string(buf, n));
+    sock.send_all(std::string{buf, n});
   }
   if (n == -1) {
     throw std::runtime_error{"read(): " + std::string{strerror(errno)}};

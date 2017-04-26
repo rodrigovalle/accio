@@ -33,7 +33,7 @@ class FileDescriptor {
                                const std::string& file, int flags, int mode);
   FileDescriptor(int fd);
   int fd;
-  char* buf[BLOCKSIZE];
+  char buf[BLOCKSIZE];
 };
 
 #endif // FILE_HPP

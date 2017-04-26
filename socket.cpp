@@ -9,10 +9,10 @@
 
 /* TODO: these helper functions should probably be a static function of some
  *       Socket superclass */
-void set_socket_sndtimeout(int sockfd) {
+static void set_socket_sndtimeout(int sockfd) {
   // affects connect() and send()
   struct timeval val;
-  val.tv_sec = TIMEOUT/2;  // XXX: make client connect timeout 10s (kernel bug?)
+  val.tv_sec = TIMEOUT/2; // XXX: make client connect timeout 10s (kernel bug?)
   val.tv_usec = 0;
 
   if (setsockopt(sockfd, SOL_SOCKET, SO_SNDTIMEO, &val, sizeof(val)) == -1) {
@@ -21,7 +21,7 @@ void set_socket_sndtimeout(int sockfd) {
   }
 }
 
-void set_socket_rcvtimeout(int sockfd) {
+static void set_socket_rcvtimeout(int sockfd) {
   // affects accept() and recv()
   struct timeval val;
   val.tv_sec = TIMEOUT;
@@ -33,7 +33,7 @@ void set_socket_rcvtimeout(int sockfd) {
   }
 }
 
-void set_socket_reuseaddr(int sockfd) {
+static void set_socket_reuseaddr(int sockfd) {
   int val = REUSEADDR;
 
   if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val)) == -1) {
@@ -218,7 +218,14 @@ void ConnectedSocket::send_all(const std::string& data) {
 
   do {
     if ((n = ::send(sockfd, buf + total, nbytes - total, 0)) == -1) {
-      throw std::runtime_error{"send(): " + std::string{strerror(errno)}};
+      switch (errno) {
+        case EAGAIN:
+          throw std::runtime_error{"send(): connection timed out"};
+          break;
+
+        default:
+          throw std::runtime_error{"send(): " + std::string{strerror(errno)}};
+      }
     }
     total += n;
   } while (total < nbytes);
