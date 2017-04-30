@@ -109,7 +109,9 @@ ListeningSocket::ListeningSocket(const std::string& port) {
 }
 
 ListeningSocket::~ListeningSocket() {
-  close(sockfd);
+  if (sockfd > 0) {
+    close(sockfd);
+  }
 }
 
 ConnectedSocket ListeningSocket::accept() {
@@ -186,7 +188,11 @@ ConnectedSocket::ConnectedSocket(ConnectedSocket&& other) {
   other.sockfd = -1;
 }
 
-ConnectedSocket::~ConnectedSocket() { close(sockfd); }
+ConnectedSocket::~ConnectedSocket() {
+  if (sockfd > 0) {
+    close(sockfd);
+  }
+}
 
 ConnectedSocket& ConnectedSocket::operator=(ConnectedSocket&& other) {
   sockfd = other.sockfd;

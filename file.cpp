@@ -16,7 +16,9 @@ FileDescriptor::FileDescriptor(FileDescriptor&& other) {
   other.fd = -1;
 }
 FileDescriptor::~FileDescriptor() {
-  close(fd);
+  if (fd > 0) {
+    close(fd);
+  }
 }
 
 FileDescriptor& FileDescriptor::operator=(FileDescriptor&& other) {
