@@ -11,11 +11,11 @@ class FileDescriptor {
  public:
   FileDescriptor() : FileDescriptor(-1) {};
   FileDescriptor(const FileDescriptor&) = delete;
-  FileDescriptor(FileDescriptor&&);
+  FileDescriptor(FileDescriptor&&) noexcept;
   ~FileDescriptor();
 
   FileDescriptor& operator=(const FileDescriptor&) = delete;
-  FileDescriptor& operator=(FileDescriptor&&);
+  FileDescriptor& operator=(FileDescriptor&&) noexcept;
 
   void write_all(const std::string& data);
   void sendfile(ConnectedSocket& sock);
@@ -31,7 +31,7 @@ class FileDescriptor {
   static FileDescriptor open(const std::string& file, int flags);
   static FileDescriptor openat(const FileDescriptor& dir,
                                const std::string& file, int flags, int mode);
-  FileDescriptor(int fd);
+  explicit FileDescriptor(int fd);
   int fd;
   char buf[BLOCKSIZE];
 };

@@ -2,16 +2,16 @@
 #include "socket.hpp"
 
 #include <fcntl.h>
-#include <unistd.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <unistd.h>
 
 #include <cerrno>
 #include <cstring>
 #include <stdexcept>
 
 FileDescriptor::FileDescriptor(int fd) : fd(fd) {}
-FileDescriptor::FileDescriptor(FileDescriptor&& other) {
+FileDescriptor::FileDescriptor(FileDescriptor&& other) noexcept {
   fd = other.fd;
   other.fd = -1;
 }
@@ -21,7 +21,7 @@ FileDescriptor::~FileDescriptor() {
   }
 }
 
-FileDescriptor& FileDescriptor::operator=(FileDescriptor&& other) {
+FileDescriptor& FileDescriptor::operator=(FileDescriptor&& other) noexcept {
   fd = other.fd;
   other.fd = -1;
   return *this;
